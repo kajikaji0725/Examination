@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -15,7 +14,6 @@ import (
 func fetchAddress(address string) (*model.ResponseJson, error) {
 
 	var addressJson model.ResponseJson
-	var errorJson model.ResponseErrorJson
 
 	endpoint := "https://geoapi.heartrails.com/api/json"
 
@@ -39,6 +37,8 @@ func fetchAddress(address string) (*model.ResponseJson, error) {
 		return nil, err
 	}
 
+	defer resp.Body.Close()
+
 	respByte, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -49,13 +49,8 @@ func fetchAddress(address string) (*model.ResponseJson, error) {
 		return nil, err
 	}
 
-	err = json.Unmarshal(respByte, &errorJson)
-	if err != nil {
-		return nil, err
-	}
-
-	if errorJson.Response.Error != "" {
-		return nil, errors.New(errorJson.Response.Error)
+	if addressJson.Response.Error != nil {
+		return nil, addressJson.Response.Error
 	}
 
 	return &addressJson, nil
@@ -71,7 +66,7 @@ func handleFetchAddress(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"postal_code": resp.Responses.Location[0].Postal, "address": resp.Responses.Location[0].Prefecture + resp.Responses.Location[0].City})
+	c.JSON(http.StatusOK, gin.H{"postal_code": resp.Response.Location[0].Postal, "address": resp.Response.Location[0].Prefecture + resp.Response.Location[0].City})
 }
 
 func NewRouter() *gin.Engine {

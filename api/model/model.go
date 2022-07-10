@@ -1,10 +1,11 @@
 package model
 
 type ResponseJson struct {
-	Responses Location `json:"response"`
+	Response Location `json:"response"`
 }
 
 type Location struct {
+	Error    error           `json:"error"`
 	Location []LocationDetail `json:"location"`
 }
 
