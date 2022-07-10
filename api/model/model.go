@@ -14,11 +14,3 @@ type LocationDetail struct {
 	Prefecture string `json:"prefecture"`
 	Postal     string `json:"postal"`
 }
-
-type ResponseErrorJson struct {
-	Response ErrorDetail `json:"response"`
-}
-
-type ErrorDetail struct {
-	Error string `json:"error"`
-}
