@@ -5,7 +5,7 @@ type ResponseJson struct {
 }
 
 type Location struct {
-	Error    error           `json:"error"`
+	Error    string           `json:"error"`
 	Location []LocationDetail `json:"location"`
 }
 

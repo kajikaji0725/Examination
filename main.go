@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	router := server.NewRouter()
+
+	c := server.NewClient()
+
+	router := c.NewRouter()
 
 	if err := router.Run(":8080"); err != nil {
 		log.Fatal(err)

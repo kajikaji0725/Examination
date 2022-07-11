@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"time"
@@ -11,11 +12,20 @@ import (
 	"github.com/kajikaji0725/Examination/api/model"
 )
 
-func fetchAddress(address string) (*model.ResponseJson, error) {
+type Client struct {
+	client *http.Client
+}
 
-	var addressJson model.ResponseJson
+func NewClient() *Client {
+	httpClient := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	return &Client{&httpClient}
+}
 
-	endpoint := "https://geoapi.heartrails.com/api/json"
+func (c *Client) fetchAddress(address string) (*model.ResponseJson, error) {
+
+	const endpoint = "https://geoapi.heartrails.com/api/json"
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
@@ -27,12 +37,7 @@ func fetchAddress(address string) (*model.ResponseJson, error) {
 	params.Add("postal", address)
 	req.URL.RawQuery = params.Encode()
 
-	timeout := time.Duration(5 * time.Second)
-	client := &http.Client{
-		Timeout: timeout,
-	}
-
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -44,32 +49,34 @@ func fetchAddress(address string) (*model.ResponseJson, error) {
 		return nil, err
 	}
 
+	var addressJson model.ResponseJson
+
 	err = json.Unmarshal(respByte, &addressJson)
 	if err != nil {
 		return nil, err
 	}
 
-	if addressJson.Response.Error != nil {
-		return nil, addressJson.Response.Error
+	if addressJson.Response.Error != "" {
+		return nil, errors.New(addressJson.Response.Error)
 	}
 
 	return &addressJson, nil
 }
 
-func handleFetchAddress(c *gin.Context) {
+func (c *Client) handleFetchAddress(gc *gin.Context) {
 
-	address := c.Query("postal_code")
+	address := gc.Query("postal_code")
 
-	resp, err := fetchAddress(address)
+	resp, err := c.fetchAddress(address)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"ErrorMessage": err.Error()})
+		gc.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"ErrorMessage": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"postal_code": resp.Response.Location[0].Postal, "address": resp.Response.Location[0].Prefecture + resp.Response.Location[0].City})
+	gc.JSON(http.StatusOK, gin.H{"postal_code": resp.Response.Location[0].Postal, "address": resp.Response.Location[0].Prefecture + resp.Response.Location[0].City})
 }
 
-func NewRouter() *gin.Engine {
+func(c *Client) NewRouter() *gin.Engine {
 
 	router := gin.Default()
 
@@ -84,7 +91,7 @@ func NewRouter() *gin.Engine {
 		MaxAge:           24 * time.Hour,
 	}))
 
-	router.GET("/address", handleFetchAddress)
+	router.GET("/address", c.handleFetchAddress)
 
 	return router
 }
