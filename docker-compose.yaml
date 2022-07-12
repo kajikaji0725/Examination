@@ -1,0 +1,24 @@
+version: "3"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./api/Dockerfile
+    container_name: postal-count-api
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8080:8080
+
+  db:
+    image: postgres:13.1
+    container_name: postal-count-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    # restart: always
+    user: root
+    ports:
+      - 5432:5432

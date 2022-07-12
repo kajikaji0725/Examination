@@ -1,21 +1,26 @@
 package model
 
+import "time"
+
 type ResponseJson struct {
-	Responses Location `json:"response"`
+	Response Location `json:"response"`
 }
 
 type Location struct {
+	Error    string           `json:"error"`
 	Location []LocationDetail `json:"location"`
 }
 
 type LocationDetail struct {
-	Postal     string `json:"postal"`
+	Postal string    `json:"postal"`
+	Date   time.Time `json:"date"`
 }
 
-type ResponseErrorJson struct {
-	Response ErrorDetail `json:"response"`
+type AccessLogs struct {
+	AccessLog []AccessLog `json:"access_log"`
 }
 
-type ErrorDetail struct {
-	Error string `json:"error"`
+type AccessLog struct {
+	Postal       string `json:"postal_code"`
+	RequestCount int    `json:"RequestCount"`
 }
